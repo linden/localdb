@@ -51,7 +51,7 @@ func (db *DB) BeginReadWriteTx() (walletdb.ReadWriteTx, error) {
 		}
 
 		// open the bucket store.
-		bkts := itx.Store(bucketStore)
+		btch := itx.Store(bucketStore).Batch()
 
 		// save every bucket by index.
 		for i, bkt := range ttx.State.Buckets {
@@ -68,10 +68,15 @@ func (db *DB) BeginReadWriteTx() (walletdb.ReadWriteTx, error) {
 			// https://go.dev/blog/strings.
 			v := strconv.Quote(buf.String())
 
-			err = bkts.Put(i, v)
+			err = btch.Put(i, v)
 			if err != nil {
 				panic(err)
 			}
+		}
+
+		err = btch.Wait()
+		if err != nil {
+			panic(err)
 		}
 	})
 
